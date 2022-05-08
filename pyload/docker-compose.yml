@@ -11,7 +11,6 @@ services:
       - ~/docker_volumes/pyload_config:/config
       - ~/Downloads:/downloads
     ports:
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+      - 8000:8000
+      - 9666:9666
     restart: unless-stopped
