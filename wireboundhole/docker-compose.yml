@@ -1,0 +1,85 @@
+networks:
+  pihole-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.2.0.0/24
+services:
+  unbound:
+    # as of creating the file, latest is v1.14.0
+    # using latest tag because a deprecated option was removed recently in the latest tagged image but not the version specific one
+    image: "mvance/unbound:latest"
+    container_name: unbound
+    restart: unless-stopped
+    hostname: "unbound"
+    volumes:
+      - "~/docker_volumes/wireboundhole/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf"
+    networks:
+      pihole-network:
+        ipv4_address: 10.2.0.100
+
+  pihole:
+    depends_on:
+      - unbound
+    container_name: pihole
+    # latest tag refers to v2022.01.1 (as of creation date)
+    # using latest tag for close-to-stock pihole updates
+    image: pihole/pihole:latest
+    hostname: pihole-dockered
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "80:80/tcp"
+    environment:
+      TZ: "Asia/Kolkata"
+      WEBPASSWORD: "${PIHOLE_PASSWD}"
+      ServerIP: "10.2.0.150"
+      PIHOLE_DNS_: "10.2.0.100;10.2.0.100"
+    volumes:
+      - "~/docker_volumes/wireboundhole/etc-pihole/:/etc/pihole/"
+      - "~/docker_volumes/wireboundhole/etc-dnsmasq.d/:/etc/dnsmasq.d/"
+    # Recommended but not required (DHCP needs NET_ADMIN)
+    # https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    cap_add:
+      - NET_ADMIN
+    dns:
+      - "127.0.0.1" # breaks gravity if not included
+      - "10.2.0.100"
+    networks:
+      pihole-network:
+        ipv4_address: 10.2.0.150
+
+  wireguard:
+    depends_on:
+      - unbound
+      - pihole
+    image: linuxserver/wireguard:1.0.20210914
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+      - SERVERURL=${SERVER_URL} # needs to be pvt ip address of the Docker's host machine
+      - SERVERPORT=51820 # optional
+      - PEERS=2 # change as needed
+      - PEERDNS=10.2.0.150 # this is the DNS over DHCP on VPN, should point to pihole
+      - INTERNAL_SUBNET=10.13.13.0 #optional
+      - ALLOWEDIPS=10.2.0.0/24 #optional
+    volumes:
+      - ~/docker_volumes/wireboundhole/wireguard_config/:/config
+      - /lib/modules:/lib/modules
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    dns: "10.2.0.150"
+    networks:
+      pihole-network:
+        ipv4_address: "10.2.0.200"
+    hostname: wireguard-dockered
+    restart: unless-stopped

@@ -1,0 +1,31 @@
+networks:
+  monitoring-network:
+volumes:
+  influxdb-store-1:
+  influxdb-store-2:
+  grafana-store:
+services:
+  grafana:
+    image: grafana/grafana-oss:8.4.0-beta1
+    restart: unless-stopped
+    volumes:
+      - grafana-store:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-network
+
+  influxdb:
+    image: influxdb:2.1.1-alpine
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    networks:
+      - monitoring-network
+    volumes:
+      - influxdb-store-1:/etc/influxdb2
+      - influxdb-store-2:/var/lib/influxdb2
+      # - /path/to/ssl-cert-key/on/host:/path/to/ssl-cert-key/in/container
+    # environment:
+      # - INFLUXD_TLS_CERT=/path/to/cert/inside/container
+      # - INFLUXD_TLS_KEY=/path/to/key/inside/container

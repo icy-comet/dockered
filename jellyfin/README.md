@@ -1,0 +1,1 @@
+Jellyfin Docs --> https://jellyfin.org/docs/general/administration/installing.html

@@ -1,0 +1,28 @@
+services:
+  jellyfin:
+    image: linuxserver/jellyfin:10.7.7
+    container_name: jellyfin
+    volumes:
+      - ~/docker_volumes/jellyfin/config/:/config/
+      # change accordingly
+      - ${MOVIES_PATH}:/data/media
+      - ${SHOWS_PATH}:/data/media2
+    ports:
+      - 8096:8096
+      - 8920:8920
+      - 7359:7359/udp
+      - 1900:1900/udp
+    group_add:
+      # render group
+      # required for hardware acceleration
+      # according to Jellyfin docs
+      - "109"
+    devices:
+      # required for hardware acceleration
+      - "/dev/dri/card0:/dev/dri/card0"
+    # Optional - alternative address used for autodiscovery
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+      - JELLYFIN_PublishedServerUrl=${SERVER_URL} #optional
