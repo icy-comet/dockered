@@ -9,7 +9,7 @@ services:
       PGID: 1000
       TZ: Asia/Kolkata
     volumes:
-      - ~/docker_volumes/heimdall_config:/config
+      - heimdall_data:/config
     ports:
       - 80:80
       - 443:443
